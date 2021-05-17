@@ -5,14 +5,26 @@ fun main() {
     val bazu = HeavyKnight("바쭈", true)
     val papa = HeavyKnight("파파", true)
     val players = arrayListOf<Person>(bazu, papa)
+
+    bazu.weapon = PsychicWeapon(WeaponType.MOTHER_HAND)
+    papa.weapon = PsychicWeapon(WeaponType.BAESUHAN_SWORD)
+
     while (bazu.hp > 0 && papa.hp > 0){
         printPersonInfo(bazu)
         println()
         printPersonInfo(papa)
         print("턴을 넘기려면 엔터>>")
         readLine()
-        bazu.attack(papa)
-        papa.attack(bazu)
+        val papaAttacked = bazu.attack(papa)
+        val bazuAttacked = papa.attack(bazu)
+
+        println("\n")
+
+        println("바쭈는 $papaAttacked 데미지를 파파에게 가했습니다!")
+        println("파파는 $bazuAttacked 데미지를 바쭈에게 가했습니다!")
+        for (i in players){
+            i.roundVars()
+        }
     }
     for (i in players){
         if (i.hp > 0){
@@ -49,13 +61,15 @@ interface Person{
     var lvl : Int
     var weapon : Weapon?
     var armor : Array<Armor>?
-    var reach : Double
     var name : String
     val roleName : String
 
-    fun attack(defencer : Person){
+    fun attack(defencer : Person) : Double{
         var atkPwr = atk
-        var damagerDfc : Double = 0.0
+        var damagerDfc = 0.0
+        if (defencer is Knight){
+            damagerDfc += defencer.dfc
+        }
 
         if (weapon != null){
             if (defencer.armor != null) {
@@ -63,37 +77,41 @@ interface Person{
                 for(i in defencer.armor!!){
                     damagerDfc += i.dfc
                 }
-                atkPwr -= damagerDfc
             }else{
-                atkPwr = weapon!!.atk
-
+                atkPwr += weapon!!.atk
             }
         }else {
             if (defencer.armor != null) {
                 for(i in defencer.armor!!){
                     damagerDfc += i.dfc
                 }
-                atkPwr -= damagerDfc
             }
         }
-        if (defencer is Knight){
+
+        atkPwr -= damagerDfc
+
+        atkPwr = round(atkPwr*10)/10
+
+        if (defencer is Knight && atkPwr > 0){
             if (defencer.defence(this, atkPwr)){
-                return
+                return -atkPwr
             }
+        }else if (avoid(this)){
+            return 0.0
         }
-        if (avoid(defencer)){
-            return
-        }
+
         if (atkPwr > 0) {
             defencer.hp -= atkPwr
         }else{
             defencer.hp--
+            return -1.0
         }
-        roundVars()
+
+        return atkPwr
     }
 
     fun avoid(damager: Person) : Boolean{
-        return damager.spd < spd && Random.nextInt(1, 100) < luk
+        return damager.spd < spd && Random.nextInt(1, 100) < luk*spd-damager.spd
     }
 
     fun randSet(){
@@ -105,10 +123,10 @@ interface Person{
     }
 
     fun roundVars(){
-        hp = round(hp*100)/100
-        atk = round(atk*100)/100
-        intl = round(intl*100)/100
-        spd = round(spd*100)/100
+        hp = round(hp*10)/10
+        atk = round(atk*10)/10
+        intl = round(intl*10)/10
+        spd = round(spd*10)/10
     }
 }
 
@@ -130,7 +148,7 @@ interface Knight : Person{
 
     override fun roundVars(){
         super.roundVars()
-        dfc = round(dfc*100)/100
+        dfc = round(dfc*10)/10
     }
 }
 
@@ -144,7 +162,6 @@ class HeavyKnight(override var name : String, rand : Boolean=false) : Knight{
     override var lvl = 1
     override var weapon: Weapon? = null
     override var armor: Array<Armor>? = null
-    override var reach = 1.0
     override var dfc = 3.0
 
     init {
@@ -163,17 +180,22 @@ fun printPersonInfo(person :Person){
     println("행운 : ${person.luk}")
     println("속도 : ${person.spd}")
     println("체력 : ${person.hp}")
-    if (person.weapon != null){
-        println("공격력 : ${person.atk+person.weapon!!.atk}")
-    }
-    println("공격력 : ${person.atk}")
 
-    var dfc : Double = 0.0
+    var atk = person.atk
+    if (person.weapon != null){
+        atk += person.weapon!!.atk
+        println("무기 : ${person.weapon!!.name}")
+    }
+    println("공격력 : $atk")
+
+    var dfc = 0.0
     if (person.armor != null){
-        for (i in person.armor!!){
-            dfc += i.dfc
+        for (i in person.armor!!.indices){
+            dfc += person.armor!![i].dfc
+            println("$armorPosType[i] : ${person.armor!![i]}")
         }
     }
+
     if (person is Knight){
         dfc += person.dfc
     }
