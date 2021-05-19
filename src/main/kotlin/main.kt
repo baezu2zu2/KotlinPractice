@@ -6,8 +6,8 @@ fun main() {
     val papa = HeavyKnight("파파", true)
     val players = arrayListOf<Person>(bazu, papa)
 
-    bazu.weapon = PsychicWeapon(WeaponType.MOTHER_HAND)
-    papa.weapon = PsychicWeapon(WeaponType.BAESUHAN_SWORD)
+    bazu.weapon = PsychicWeapon(WeaponName.MOTHER_HAND)
+    papa.weapon = PsychicWeapon(WeaponName.BAESUHAN_SWORD)
 
     while (bazu.hp > 0 && papa.hp > 0){
         printPersonInfo(bazu)
